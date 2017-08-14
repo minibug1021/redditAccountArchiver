@@ -6,5 +6,6 @@ If run twice on the same username, it will add any new comments.
 
 # Required libs
 
-praw4 or above
-tqdm 
+* praw4 or above
+
+* tqdm 

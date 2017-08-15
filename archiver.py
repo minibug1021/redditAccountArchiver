@@ -57,9 +57,13 @@ c.execute('CREATE TABLE IF NOT EXISTS posts(permalink TEXT, subreddit TEXT, titl
 
 posts = {}
 
-print('Generating ID list for posts...')
-for post in user.submissions.new(limit=None):
-	posts[post.id] = post
+print('Creating ID list for new...')
+for post in user.submissions.new(limit=1000):
+        posts[post.id] = post
+
+print('Creating ID list for top...')
+for post in user.submissions.top(limit=1000):
+        posts[post.id] = post
 
 print('Fetching pre-existing posts...')
 existing_ids = []

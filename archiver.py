@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import praw, sqlite3, sys, time
 from tqdm import tqdm
 timeNOW = time.time()

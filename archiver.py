@@ -73,7 +73,7 @@ for item in existing_ids:
         except KeyError:
                 pass
 
-print('Starting archival with {} new comments to process...'.format(len(posts)))
+print('Starting archival with {} new posts to process...'.format(len(posts)))
 
 for id, post in tqdm(posts.items()):
         permalink = 'redd.it/{}'.format(post.id)

@@ -51,11 +51,40 @@ for id, comment in tqdm(comments.items()):
         
         conn.commit()
 
-#tells you how long it took to finish
+# ↑comments↑ --- ↓posts↓
+        
+print('\nGenerating post database...')
+c.execute('CREATE TABLE IF NOT EXISTS posts(permalink TEXT, subreddit TEXT, title TEXT, body TEXT, domain TEXT, is_self TEXT, score INTEGER, timestamp INTEGER, edited TEXT, gilded INTEGER, distinguished TEXT, author_flair_css_class TEXT, author_flair_text TEXT, link_flair TEXT, post_id TEXT)')
+
+posts = {}
+
+print('Generating ID list for posts...')
+for post in user.submissions.new(limit=None):
+	posts[post.id] = post
+
+print('Fetching pre-existing posts...')
+existing_ids = []
+c.execute("SELECT post_id FROM posts")
+for row in c.fetchall():
+	existing_ids.append(row[0])
+
+for item in existing_ids:
+        try:
+                del posts[item]
+        except KeyError:
+                pass
+
+print('Starting archival with {} new comments to process...'.format(len(posts)))
+
+for id, post in tqdm(posts.items()):
+        c.execute('INSERT INTO posts (permalink, subreddit, title, body, domain, is_self, score, timestamp, edited, gilded, distinguished, author_flair_css_class, author_flair_text, link_flair, post_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                  ,(post.url, str(post.subreddit), str(post.title), post.selftext, post.domain, post.is_self, post.score, post.created_utc, post.edited, post.gilded, post.distinguished, post.author_flair_css_class, post.author_flair_text, post.link_flair_text, post.id))
+        conn.commit()
+
 seconds = time.time()-timeNOW
 m,s = divmod(seconds,60)
 h,m = divmod(m, 60)
-print('Finished archiving /u/{} in %d hours, %02d minutes, and %02d seconds'.format(user) % (h, m, s))
+print('\nFinished archiving /u/{} in %d hours, %02d minutes, and %02d seconds'.format(user) % (h, m, s))
 
 
 c.close()

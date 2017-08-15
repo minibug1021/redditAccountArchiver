@@ -13,3 +13,5 @@ If run twice on the same username, it will add any new comments.
 * praw4 or above
 
 * tqdm 
+
+* sqlite3

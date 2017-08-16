@@ -27,6 +27,10 @@ for comment in user.comments.new(limit=1000):
 print('Creating ID list for top...')
 for comment in user.comments.top(limit=1000):
         comments[comment.id] = comment
+print('Creating ID list for controversial...')
+for comment in user.comments.controversial('all'):
+        comments[comment.id] = comment
+
 
 print('Fetching pre-existing comments...')
 #adds already existing comments to a list so they can be filtered out
@@ -65,6 +69,10 @@ for post in user.submissions.new(limit=1000):
 
 print('Creating ID list for top...')
 for post in user.submissions.top(limit=1000):
+        posts[post.id] = post
+	
+print('Creating ID list for controversial...')
+for post in user.submissions.controversial('all'):
         posts[post.id] = post
 
 print('Fetching pre-existing posts...')

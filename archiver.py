@@ -19,8 +19,8 @@ c = conn.cursor()
 c.execute('CREATE TABLE IF NOT EXISTS comments(permalink TEXT, subreddit TEXT, comment TEXT, score INTEGER, timestamp INTEGER, controversiality INTEGER, edited TEXT, score_hidden TEXT, gilded INTEGER, distinguished TEXT, author_flair_css_class TEXT, author_flair_text TEXT, comment_length INTEGER, comment_id TEXT)')
 
 comments = {}
-#adds the ID and comment object of the top 1k comments from Hot and New to our comments dict.
-#the commets dict will NEVER be larger than 2k
+#adds the ID and comment object of the top 1k comments from Hot, New, and Controversial to our comments dict.
+#the commets dict will NEVER be larger than 3k
 print('Creating ID list for new...')
 for comment in user.comments.new(limit=1000):
         comments[comment.id] = comment

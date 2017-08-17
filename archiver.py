@@ -20,7 +20,7 @@ c.execute('CREATE TABLE IF NOT EXISTS comments(permalink TEXT, subreddit TEXT, c
 
 comments = {}
 #adds the ID and comment object of the top 1k comments from Hot, New, and Controversial to our comments dict.
-#the commets dict will NEVER be larger than 3k
+#the comments dict will NEVER be larger than 3k
 print('Creating ID list for new...')
 for comment in user.comments.new(limit=1000):
         comments[comment.id] = comment

@@ -5,7 +5,7 @@ for item in os.listdir():
 	if '.db' in item:
 		to_update.append(item[:-3])
 to_update.append('')
-f = open(r'PATH TO ARCHIVER.PY', 'r+')
+f = open(r'PATH TO ARCHIVE.PY FOLDER/update.bat', 'r+')
 f.truncate()
 
 for i in range(len(to_update)):

@@ -12,6 +12,12 @@ r = praw.Reddit(client_id='',
 #input from commandline
 user = r.redditor(sys.argv[1])
 
+try:
+        does_exist = user.link_karma
+except NotFound:
+        print("Account is unable to be accessed for any number of reasons (Deleted, doesn't exist, reddit is down, etc), Aborting archival.")
+        sys.exit()
+
 print('Generating comment database...')
 #creates db file with name of user
 conn = sqlite3.connect('{}.db'.format(user))

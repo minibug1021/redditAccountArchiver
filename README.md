@@ -4,7 +4,7 @@ Archives reddit accounts by taking the top 1k Newest comments and top 1k highest
 
 Also grabs every post it can find.
 
-Must be run through command line, ala "script.py 'username'"
+Must be run through command line, ala `script.py 'username'`
 
 If run twice on the same username, it will add any new comments.
 

@@ -2,7 +2,7 @@ import praw,sys,os
 
 r = praw.Reddit(client_id='',
                      client_secret='',
-		     user_agent='test-',
+		     user_agent='',
                      password='',
                      username='')
 #input from commandline

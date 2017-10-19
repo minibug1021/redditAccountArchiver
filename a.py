@@ -1,8 +1,12 @@
-#!/usr/bin/env python3
-
 import praw, sqlite3, sys, time
 from tqdm import tqdm
+from prawcore.exceptions import NotFound
 timeNOW = time.time()
+
+def print_no_newline(string):
+    import sys
+    sys.stdout.write(string)
+    sys.stdout.flush()
 
 r = praw.Reddit(client_id='',
                      client_secret='',
@@ -11,32 +15,45 @@ r = praw.Reddit(client_id='',
                      username='')
 #input from commandline
 user = r.redditor(sys.argv[1])
-
+        
 try:
         does_exist = user.link_karma
 except NotFound:
         print("Account is unable to be accessed for any number of reasons (Deleted, doesn't exist, reddit is down, etc), Aborting archival.")
         sys.exit()
-
 print('Generating comment database...')
 #creates db file with name of user
 conn = sqlite3.connect('{}.db'.format(user))
 c = conn.cursor()
 c.execute('CREATE TABLE IF NOT EXISTS comments(permalink TEXT, subreddit TEXT, comment TEXT, score INTEGER, timestamp INTEGER, controversiality INTEGER, edited TEXT, score_hidden TEXT, gilded INTEGER, distinguished TEXT, author_flair_css_class TEXT, author_flair_text TEXT, comment_length INTEGER, comment_id TEXT)')
 
+
 comments = {}
-#adds the ID and comment object of the top 1k comments from Hot, New, and Controversial to our comments dict.
-#the comments dict will NEVER be larger than 3k
+#adds the ID and comment object of the top 1k comments from Hot and New to our comments dict.
+#the comments dict will NEVER be larger than 2k
+
 print('Creating ID list for new...')
 for comment in user.comments.new(limit=1000):
-        comments[comment.id] = comment
+                comments[comment.id] = comment
+
 print('Creating ID list for top...')
 for comment in user.comments.top(limit=1000):
         comments[comment.id] = comment
-print('Creating ID list for controversial...')
-for comment in user.comments.controversial('all'):
+
+print('Creating ID list for hot...')
+for comment in user.comments.hot(limit=1000):
         comments[comment.id] = comment
 
+print_no_newline('Creating ID list for most controversial of... ')
+def controversialCOMMENTS(time):
+        print_no_newline(' {}...'.format(time))
+        for comment in user.comments.controversial(time):
+                comments[comment.id] = comment
+times = ['hour','day','week','month','year','all']
+
+for i in times:
+        controversialCOMMENTS(i)
+print('')
 
 print('Fetching pre-existing comments...')
 #adds already existing comments to a list so they can be filtered out
@@ -55,7 +72,7 @@ for item in existing_ids:
 
 print('Starting archival with {} new comments to process...'.format(len(comments)))
 
-#not so ghetto progress bar
+#progress bar
 for id, comment in tqdm(comments.items()):
         permalink = 'reddit.com/r/{}/comments/{}//{}'.format(comment.subreddit, comment.submission, comment)
         c.execute('INSERT INTO comments (permalink, subreddit, comment, score, timestamp, controversiality, edited, score_hidden, gilded, distinguished, author_flair_css_class, author_flair_text, comment_length, comment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -76,10 +93,19 @@ for post in user.submissions.new(limit=1000):
 print('Creating ID list for top...')
 for post in user.submissions.top(limit=1000):
         posts[post.id] = post
-	
-print('Creating ID list for controversial...')
-for post in user.submissions.controversial('all'):
+
+print('Creating ID list for hot...')
+for post in user.submissions.hot(limit=1000):
         posts[post.id] = post
+
+print_no_newline('Creating ID list for most controversial of... ')
+def controversialPOSTS(time):
+        print_no_newline(' {}...'.format(time))
+        for post in user.submissions.controversial(time):
+                posts[post.id] = post
+for i in times:
+        controversialPOSTS(i)
+print('')
 
 print('Fetching pre-existing posts...')
 existing_ids = []

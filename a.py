@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import praw, sqlite3, sys, time, winsound
 from tqdm import tqdm
 from prawcore.exceptions import NotFound

@@ -1,4 +1,4 @@
-import praw, sqlite3, sys, time
+import praw, sqlite3, sys, time, winsound
 from tqdm import tqdm
 from prawcore.exceptions import NotFound
 timeNOW = time.time()
@@ -15,12 +15,13 @@ r = praw.Reddit(client_id='',
                      username='')
 #input from commandline
 user = r.redditor(sys.argv[1])
-        
+
 try:
         does_exist = user.link_karma
 except NotFound:
-        print("Account is unable to be accessed for any number of reasons (Deleted, doesn't exist, reddit is down, etc), Aborting archival.")
-        sys.exit()
+		print("Account is unable to be accessed for any number of reasons (Deleted, doesn't exist, reddit is down, etc), Aborting archival.")
+		winsound.Beep(2000,1000)
+		sys.exit()
 print('Generating comment database...')
 #creates db file with name of user
 conn = sqlite3.connect('{}.db'.format(user))
@@ -36,10 +37,6 @@ print('Creating ID list for new...')
 for comment in user.comments.new(limit=1000):
                 comments[comment.id] = comment
 
-print('Creating ID list for top...')
-for comment in user.comments.top(limit=1000):
-        comments[comment.id] = comment
-
 print('Creating ID list for hot...')
 for comment in user.comments.hot(limit=1000):
         comments[comment.id] = comment
@@ -49,15 +46,27 @@ def controversialCOMMENTS(time):
         print_no_newline(' {}...'.format(time))
         for comment in user.comments.controversial(time):
                 comments[comment.id] = comment
+				
+def topCOMMENTS(time):
+        print_no_newline(' {}...'.format(time))
+        for comment in user.comments.top(time):
+                comments[comment.id] = comment
+				
 times = ['hour','day','week','month','year','all']
-
 for i in times:
         controversialCOMMENTS(i)
 print('')
+print_no_newline('Creating ID list for top of... ')
+for i in times:
+        topCOMMENTS(i)
+print('')
+
+update_scores = comments.copy()
 
 print('Fetching pre-existing comments...')
 #adds already existing comments to a list so they can be filtered out
 existing_ids = []
+
 c.execute("SELECT comment_id FROM comments")
 for row in c.fetchall():
 	existing_ids.append(row[0])
@@ -72,13 +81,17 @@ for item in existing_ids:
 
 print('Starting archival with {} new comments to process...'.format(len(comments)))
 
-#progress bar
+#not so ghetto progress bar
 for id, comment in tqdm(comments.items()):
         permalink = 'reddit.com/r/{}/comments/{}//{}'.format(comment.subreddit, comment.submission, comment)
         c.execute('INSERT INTO comments (permalink, subreddit, comment, score, timestamp, controversiality, edited, score_hidden, gilded, distinguished, author_flair_css_class, author_flair_text, comment_length, comment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                   ,(permalink, str(comment.subreddit), comment.body, comment.score, comment.created_utc, comment.controversiality, comment.edited, comment.score_hidden, comment.gilded, comment.distinguished, comment.author_flair_css_class, comment.author_flair_text, len(comment.body), comment.id))
         conn.commit()
-        
+
+print('Updating comment scores...')
+for id, comment in tqdm(update_scores.items()):
+	c.execute("UPDATE comments SET score=? WHERE comment_id=?", (comment.score,id))
+	conn.commit()
 # ↑comments↑ --- ↓posts↓
         
 print('\nGenerating post database...')
@@ -90,10 +103,6 @@ print('Creating ID list for new...')
 for post in user.submissions.new(limit=1000):
         posts[post.id] = post
 
-print('Creating ID list for top...')
-for post in user.submissions.top(limit=1000):
-        posts[post.id] = post
-
 print('Creating ID list for hot...')
 for post in user.submissions.hot(limit=1000):
         posts[post.id] = post
@@ -103,9 +112,20 @@ def controversialPOSTS(time):
         print_no_newline(' {}...'.format(time))
         for post in user.submissions.controversial(time):
                 posts[post.id] = post
+def topPOSTS(time):
+        print_no_newline(' {}...'.format(time))
+        for post in user.submissions.top(time):
+                posts[post.id] = post
+				
 for i in times:
         controversialPOSTS(i)
 print('')
+print_no_newline('Creating ID list for top of... ')
+for i in times:
+        topPOSTS(i)
+print('')
+
+update_posts = posts.copy()
 
 print('Fetching pre-existing posts...')
 existing_ids = []
@@ -126,6 +146,11 @@ for id, post in tqdm(posts.items()):
         c.execute('INSERT INTO posts (permalink, subreddit, title, body, link, domain, is_self, score, timestamp, edited, gilded, distinguished, author_flair_css_class, author_flair_text, link_flair, body_length, post_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
                   ,(permalink, str(post.subreddit), str(post.title), post.selftext, post.url, post.domain, post.is_self, post.score, post.created_utc, post.edited, post.gilded, post.distinguished, post.author_flair_css_class, post.author_flair_text, post.link_flair_text, len(post.selftext), post.id))
         conn.commit()
+
+print('Updating post scores...')
+for id, post in tqdm(update_posts.items()):
+	c.execute("UPDATE posts SET score=? WHERE post_id=?", (post.score,id))
+	conn.commit()
 
 seconds = time.time()-timeNOW
 m,s = divmod(seconds,60)

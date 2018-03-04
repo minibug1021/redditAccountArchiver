@@ -32,8 +32,7 @@ c.execute('CREATE TABLE IF NOT EXISTS comments(permalink TEXT, subreddit TEXT, c
 
 
 comments = {}
-#adds the ID and comment object of the top 1k comments from Hot and New to our comments dict.
-#the comments dict will NEVER be larger than 2k
+#adds the ID and comment object of the top 1k comments from Hot, New, etc. to our comments dict.
 
 print('Creating ID list for new...')
 for comment in user.comments.new(limit=1000):
@@ -83,7 +82,7 @@ for item in existing_ids:
 
 print('Starting archival with {} new comments to process...'.format(len(comments)))
 
-#not so ghetto progress bar
+#progress bar
 for id, comment in tqdm(comments.items()):
         permalink = 'reddit.com/r/{}/comments/{}//{}'.format(comment.subreddit, comment.submission, comment)
         c.execute('INSERT INTO comments (permalink, subreddit, comment, score, timestamp, controversiality, edited, score_hidden, gilded, distinguished, author_flair_css_class, author_flair_text, comment_length, comment_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -153,6 +152,34 @@ print('Updating post scores...')
 for id, post in tqdm(update_posts.items()):
 	c.execute("UPDATE posts SET score=? WHERE post_id=?", (post.score,id))
 	conn.commit()
+
+#delete count tables if they already exist
+#honestly its easier to just rebuild it every time than issue a trillion update statements
+c.execute('DROP TABLE IF EXISTS countPosts')
+c.execute('DROP TABLE IF EXISTS countComments')
+c.execute('DROP TABLE IF EXISTS commentBreakdown')
+c.execute('DROP TABLE IF EXISTS postsBreakdown')
+
+#going to do the same thing for posts and comments.
+#select the subs and totals with this, append it to a list, then add it to the main database in two new tables.
+selected1 = c.execute('SELECT DISTINCT subreddit, SUM(score) AS karma, COUNT(subreddit) AS CountOf FROM comments GROUP BY subreddit ORDER BY subreddit ASC')
+rows1 = []
+for row in selected1:
+    rows1.append(row)
+c.execute('CREATE TABLE IF NOT EXISTS commentBreakdown(subreddit TEXT, Count INTEGER, Karma INTEGER)')
+for i in rows1:
+    c.execute('INSERT INTO commentBreakdown (subreddit, Count, Karma) VALUES (?,?,?)',(i[0],i[2],i[1]))
+conn.commit()
+
+selected2 = c.execute('SELECT DISTINCT subreddit, SUM(score) AS karma, COUNT(subreddit) AS CountOf FROM posts GROUP BY subreddit ORDER BY subreddit ASC')
+rows2 = []
+for row in selected2:
+    rows2.append(row)
+c.execute('CREATE TABLE IF NOT EXISTS postsBreakdown(subreddit TEXT, Count INTEGER, Karma INTEGER)')
+for i in rows2:
+    c.execute('INSERT INTO postsBreakdown (subreddit, Count, Karma) VALUES (?,?,?)',(i[0],i[2],i[1]))
+conn.commit()
+print('Finished making subreddit and post counts')
 
 seconds = time.time()-timeNOW
 m,s = divmod(seconds,60)

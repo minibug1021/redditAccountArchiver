@@ -4,7 +4,7 @@ Archives reddit accounts by taking the top 1k Newest, Popular, Controversial, an
 
 Also grabs every post it can find.
 
-Must be run through command line, ala `master.py 'username'`
+Must be run through command line, ala `master.py -a 'username'`
 
 If run twice on the same username, it will add any new comments.
 
